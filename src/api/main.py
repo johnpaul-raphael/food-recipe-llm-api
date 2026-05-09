@@ -8,7 +8,7 @@ async def lifespan(app: FastAPI):
     yield
     print("Application shutdown")
 
-app = FastAPI(title="Recipe Generator API",
+app = FastAPI(title="Food Recipe LLM API",
 description="Generate recipes based on the prompt",
 version="1.0.0",
 lifespan=lifespan)
@@ -17,4 +17,4 @@ app.include_router(router, prefix="/api")
 
 @app.get("/")
 def root():
-    return {"message": "Welcome to the Recipe Generator API"}
+    return {"message": "Welcome to the Food Recipe LLM API"}
