@@ -35,4 +35,4 @@ jobs:
       - name: SAM validate
         run: sam validate --lint
         env:
-          AWS_DEFAULT_REGION: ap-south-1
+          AWS_DEFAULT_REGION: us-east-1
