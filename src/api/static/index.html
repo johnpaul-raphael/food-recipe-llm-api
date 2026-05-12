@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chef AI — Food Recipe Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --orange: #ff6b35;
+            --orange-dark: #e55a25;
+            --orange-light: #fff0eb;
+            --bg: #fafaf8;
+            --card: #ffffff;
+            --text: #1a1a1a;
+            --muted: #888;
+            --border: #ebebeb;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── HEADER ── */
+        header {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .logo { font-size: 1.8rem; }
+        .brand { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+        .brand span { color: var(--orange); }
+        .badge {
+            margin-left: auto;
+            background: var(--orange-light);
+            color: var(--orange);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── HERO ── */
+        .hero {
+            text-align: center;
+            padding: 48px 24px 32px;
+        }
+        .hero h1 {
+            font-size: 2.2rem;
+            color: var(--text);
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+        .hero h1 span { color: var(--orange); }
+        .hero p {
+            color: var(--muted);
+            font-size: 1rem;
+            max-width: 500px;
+            margin: 0 auto 28px;
+            line-height: 1.6;
+        }
+
+        /* ── PROMPT CHIPS ── */
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+        .chip {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chip:hover {
+            background: var(--orange-light);
+            border-color: var(--orange);
+            color: var(--orange);
+        }
+
+        /* ── INPUT ── */
+        .input-wrapper {
+            max-width: 640px;
+            margin: 0 auto 40px;
+            padding: 0 16px;
+        }
+        .input-box {
+            display: flex;
+            gap: 0;
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .input-box:focus-within { border-color: var(--orange); }
+        .input-icon { padding: 0 14px; display: flex; align-items: center; font-size: 1.2rem; }
+        input {
+            flex: 1;
+            padding: 16px 0;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+            color: var(--text);
+            background: transparent;
+        }
+        input::placeholder { color: #bbb; }
+        button.generate-btn {
+            background: var(--orange);
+            color: white;
+            border: none;
+            padding: 0 24px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button.generate-btn:hover { background: var(--orange-dark); }
+        button.generate-btn:disabled { background: #ddd; cursor: not-allowed; }
+
+        /* ── HOW IT WORKS ── */
+        .how-it-works {
+            max-width: 700px;
+            margin: 0 auto 48px;
+            padding: 0 16px;
+        }
+        .how-it-works h3 {
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 20px;
+        }
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        .step {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 16px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .step-icon { font-size: 1.8rem; margin-bottom: 10px; }
+        .step-title { font-weight: 600; font-size: 0.9rem; color: var(--text); margin-bottom: 4px; }
+        .step-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+
+        /* ── COOKING ANIMATION ── */
+        .cooking-overlay {
+            display: none;
+            max-width: 640px;
+            margin: 0 auto 32px;
+            padding: 0 16px;
+        }
+        .cooking-card {
+            background: white;
+            border-radius: 16px;
+            border: 2px solid var(--orange-light);
+            padding: 32px 24px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(255,107,53,0.1);
+            min-height: 260px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .cooking-animation {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        .cooking-animation span { display: inline-block; animation: bounce 1.2s infinite; }
+        .cooking-animation span:nth-child(2) { animation-delay: 0.2s; }
+        .cooking-animation span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-12px); }
+        }
+
+        .cooking-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+        .cooking-status {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 20px;
+            height: 24px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            font-family: monospace;
+            letter-spacing: 0.5px;
+        }
+        .cooking-steps-anim {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--orange);
+            border-radius: 50%;
+            animation: pulse 1.4s infinite;
+        }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes pulse {
+            0%, 80%, 100% { opacity: 0.3; transform: scale(1); }
+            40% { opacity: 1; transform: scale(1.3); }
+        }
+
+        .progress-bar-wrap {
+            background: var(--orange-light);
+            border-radius: 10px;
+            height: 6px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--orange);
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* ── RECIPE CARD ── */
+        .recipe-card {
+            display: none;
+            max-width: 700px;
+            margin: 0 auto 48px;
+            padding: 0 16px;
+        }
+        .recipe-inner {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            animation: slideUp 0.4s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .recipe-header {
+            background: linear-gradient(135deg, #ff6b35, #ff8c42);
+            padding: 28px 28px 24px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .recipe-header::after {
+            content: "🍽";
+            position: absolute;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 4rem;
+            opacity: 0.2;
+        }
+        .recipe-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            opacity: 0.8;
+            margin-bottom: 6px;
+        }
+        .recipe-title {
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .recipe-sub { font-size: 0.85rem; opacity: 0.75; }
+
+        .recipe-body { padding: 28px; }
+
+        .section { margin-bottom: 28px; }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .section-icon { font-size: 1.1rem; }
+        .section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--orange);
+        }
+        .section-count {
+            margin-left: auto;
+            background: var(--orange-light);
+            color: var(--orange);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        /* Ingredients grid */
+        .ingredient-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .ingredient-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.88rem;
+            color: #444;
+        }
+        .ingredient-item::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            background: var(--orange);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Instructions */
+        .instruction-list { display: flex; flex-direction: column; gap: 12px; }
+        .instruction-item {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            padding: 14px;
+            background: var(--bg);
+            border-radius: 10px;
+            border-left: 3px solid var(--orange-light);
+            transition: border-color 0.2s;
+        }
+        .instruction-item:hover { border-left-color: var(--orange); }
+        .step-num {
+            background: var(--orange);
+            color: white;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .step-text { font-size: 0.92rem; color: #444; line-height: 1.65; }
+
+        /* Error */
+        .error-box {
+            display: none;
+            max-width: 640px;
+            margin: 0 auto 24px;
+            padding: 0 16px;
+        }
+        .error-inner {
+            background: #fff3f3;
+            border: 1px solid #ffd0d0;
+            border-radius: 10px;
+            padding: 14px 18px;
+            color: #c62828;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: auto;
+            text-align: center;
+            padding: 24px;
+            color: #bbb;
+            font-size: 0.78rem;
+        }
+
+        @media (max-width: 540px) {
+            .hero h1 { font-size: 1.6rem; }
+            .steps { grid-template-columns: 1fr; }
+            .ingredient-grid { grid-template-columns: 1fr; }
+            .recipe-header::after { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="logo">👨‍🍳</div>
+        <div>
+            <div class="brand">Chef<span>AI</span></div>
+        </div>
+        <div class="badge">Powered by Fine-tuned GPT-2</div>
+    </header>
+
+    <!-- HERO -->
+    <div class="hero">
+        <h1>Your personal<br><span>AI Recipe Chef</span></h1>
+        <p>Type any dish name and ChefAI will instantly generate a full recipe with ingredients and step-by-step instructions — powered by a fine-tuned language model.</p>
+
+        <!-- PROMPT CHIPS -->
+        <div class="chips">
+            <div class="chip" onclick="useChip('Chicken Biryani')">🍗 Chicken Biryani</div>
+            <div class="chip" onclick="useChip('Mutton Curry')">🥩 Mutton Curry</div>
+            <div class="chip" onclick="useChip('Paneer Butter Masala')">🧀 Paneer Butter Masala</div>
+            <div class="chip" onclick="useChip('Dal Tadka')">🫘 Dal Tadka</div>
+            <div class="chip" onclick="useChip('Vegetable Pulao')">🌿 Vegetable Pulao</div>
+            <div class="chip" onclick="useChip('Palak Paneer')">🥬 Palak Paneer</div>
+        </div>
+    </div>
+
+    <!-- INPUT -->
+    <div class="input-wrapper">
+        <div class="input-box">
+            <div class="input-icon">🔍</div>
+            <input type="text" id="prompt" placeholder="e.g. Chicken Biryani, Mutton Curry, Dal Tadka..." />
+            <button class="generate-btn" id="generateBtn" onclick="generateRecipe()">
+                <span>Cook it</span> 🚀
+            </button>
+        </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="how-it-works" id="howItWorks">
+        <h3>How it works</h3>
+        <div class="steps">
+            <div class="step">
+                <div class="step-icon">✍️</div>
+                <div class="step-title">Type a dish name</div>
+                <div class="step-desc">Enter any Indian dish or pick from the suggestions above</div>
+            </div>
+            <div class="step">
+                <div class="step-icon">🤖</div>
+                <div class="step-title">AI cooks it up</div>
+                <div class="step-desc">Our fine-tuned GPT-2 model generates a recipe just for you</div>
+            </div>
+            <div class="step">
+                <div class="step-icon">📋</div>
+                <div class="step-title">Follow the steps</div>
+                <div class="step-desc">Get a structured recipe with ingredients and clear instructions</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COOKING ANIMATION -->
+    <div class="cooking-overlay" id="cookingOverlay">
+        <div class="cooking-card">
+            <div class="cooking-animation">
+                <span>🥘</span>
+                <span>🔥</span>
+                <span>🍴</span>
+            </div>
+            <div class="cooking-title">ChefAI is cooking your recipe...</div>
+            <div class="cooking-status" id="cookingStatus">Preheating the AI kitchen...</div>
+            <div class="cooking-steps-anim">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="progress-bar-wrap">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ERROR -->
+    <div class="error-box" id="errorBox">
+        <div class="error-inner">
+            ⚠️ <span id="errorMsg">Something went wrong. Please try again.</span>
+        </div>
+    </div>
+
+    <!-- RECIPE CARD -->
+    <div class="recipe-card" id="recipeCard">
+        <div class="recipe-inner">
+            <div class="recipe-header">
+                <div class="recipe-label">AI Generated Recipe</div>
+                <div class="recipe-title" id="recipeTitle"></div>
+                <div class="recipe-sub" id="recipeSub"></div>
+            </div>
+            <div class="recipe-body">
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-icon">🛒</div>
+                        <div class="section-title">Ingredients</div>
+                        <div class="section-count" id="ingredientCount"></div>
+                    </div>
+                    <div class="ingredient-grid" id="ingredientGrid"></div>
+                </div>
+                <div class="section">
+                    <div class="section-header">
+                        <div class="section-icon">👨‍🍳</div>
+                        <div class="section-title">Instructions</div>
+                        <div class="section-count" id="instructionCount"></div>
+                    </div>
+                    <div class="instruction-list" id="instructionList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        ChefAI · Fine-tuned GPT-2 · Built with FastAPI · Deployed on AWS Lambda
+    </footer>
+
+    <script>
+        const cookingMessages = [
+            "Preheating the AI kitchen... 🔥",
+            "Onions made us cry. Worth it. 😢",
+            "Calling grandma for tips... 📞",
+            "What is julienne anyway? 🤔",
+            "7th taste test. For science. 🧪",
+            "Bribing the spice rack... 🌶️",
+            "Negotiating with the cooker... ⏱️",
+            "The dal is judging us... 👀",
+            "Adding just a liiittle more butter... 🧈",
+            "Consulting the AI cookbook... 📖",
+            "Teaching robot to fold dosas... 🤖",
+            "Oops. Too much chilli. 🥵",
+            "Tadka exploded. We're fine. 💥",
+            "Hiring a tiny sous chef... 👨‍🍳",
+            "Stirring clockwise for karma... 🌀",
+            "The biryani is singing. Normal. 🎵",
+            "Chasing masala around the pan... 🏃",
+            "Motivating the dough... 💪",
+            "AI ate a sample. Refilling... 😅",
+            "Was the ghost pepper a mistake? 👻",
+            "Convincing the coconut... 🥥",
+            "Marinating the data... 🍖",
+            "Yes Chef! (to ourselves) 🫡",
+            "Smells amazing. You can't smell it. 😬",
+            "Deglazing the neural network... 🧠",
+            "Folding in the cheese... 🧀",
+            "AI discovered butter. Life changed. ✨",
+            "3AM taste test. Classic. 🌙",
+            "Don't peek in the oven. 🙈",
+            "Almost ready. Hold tight! ⏳",
+        ];
+
+        let statusInterval, progressInterval, msgIndex = 0, progress = 0;
+
+        const scrambleChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%&*?";
+
+        function scrambleText(el, newText, duration = 600) {
+            const steps = 10;
+            const stepTime = duration / steps;
+            let step = 0;
+
+            const interval = setInterval(() => {
+                step++;
+                const progress = step / steps;
+                const revealCount = Math.floor(progress * newText.length);
+
+                let display = "";
+                for (let i = 0; i < newText.length; i++) {
+                    if (i < revealCount) {
+                        display += newText[i];
+                    } else if (newText[i] === " ") {
+                        display += " ";
+                    } else {
+                        display += scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+                    }
+                }
+                el.textContent = display;
+
+                if (step >= steps) {
+                    clearInterval(interval);
+                    el.textContent = newText;
+                }
+            }, stepTime);
+        }
+
+        function startCookingAnimation() {
+            msgIndex = 0;
+            progress = 0;
+            const el = document.getElementById("cookingStatus");
+            scrambleText(el, cookingMessages[0]);
+            document.getElementById("progressBar").style.width = "0%";
+
+            statusInterval = setInterval(() => {
+                msgIndex = (msgIndex + 1) % cookingMessages.length;
+                scrambleText(el, cookingMessages[msgIndex]);
+            }, 2000);
+
+            progressInterval = setInterval(() => {
+                if (progress < 90) {
+                    progress += Math.random() * 6;
+                    document.getElementById("progressBar").style.width = Math.min(progress, 90) + "%";
+                }
+            }, 800);
+        }
+
+        function stopCookingAnimation() {
+            clearInterval(statusInterval);
+            clearInterval(progressInterval);
+            document.getElementById("progressBar").style.width = "100%";
+            document.getElementById("cookingStatus").textContent = "Recipe ready! Serving now...";
+        }
+
+        function useChip(text) {
+            document.getElementById("prompt").value = text;
+            document.getElementById("prompt").focus();
+        }
+
+        document.getElementById("prompt").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") generateRecipe();
+        });
+
+        async function generateRecipe() {
+            const prompt = document.getElementById("prompt").value.trim();
+            if (!prompt) return;
+
+            const btn = document.getElementById("generateBtn");
+            const cooking = document.getElementById("cookingOverlay");
+            const card = document.getElementById("recipeCard");
+            const errorBox = document.getElementById("errorBox");
+            const howItWorks = document.getElementById("howItWorks");
+
+            btn.disabled = true;
+            btn.innerHTML = "Cooking... 🍳";
+            cooking.style.display = "block";
+            card.style.display = "none";
+            errorBox.style.display = "none";
+            howItWorks.style.display = "none";
+
+            startCookingAnimation();
+
+            try {
+                const response = await fetch("/api/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt })
+                });
+
+                if (!response.ok) throw new Error("Failed to generate recipe");
+
+                const data = await response.json();
+                stopCookingAnimation();
+
+                setTimeout(() => {
+                    cooking.style.display = "none";
+                    renderRecipe(data);
+                }, 800);
+
+            } catch (err) {
+                stopCookingAnimation();
+                cooking.style.display = "none";
+                document.getElementById("errorMsg").textContent = "Oops! ChefAI couldn't cook that dish. Please try again.";
+                errorBox.style.display = "block";
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "<span>Cook it</span> 🚀";
+            }
+        }
+
+        function renderRecipe(data) {
+            document.getElementById("recipeTitle").textContent = data.title;
+            document.getElementById("recipeSub").textContent = `${data.ingredients.length} ingredients · ${data.instructions.length} steps`;
+
+            document.getElementById("ingredientCount").textContent = `${data.ingredients.length} items`;
+            const grid = document.getElementById("ingredientGrid");
+            grid.innerHTML = "";
+            data.ingredients.forEach(item => {
+                const div = document.createElement("div");
+                div.className = "ingredient-item";
+                div.textContent = item;
+                grid.appendChild(div);
+            });
+
+            document.getElementById("instructionCount").textContent = `${data.instructions.length} steps`;
+            const list = document.getElementById("instructionList");
+            list.innerHTML = "";
+            data.instructions.forEach((step, i) => {
+                const div = document.createElement("div");
+                div.className = "instruction-item";
+                div.innerHTML = `<div class="step-num">${i + 1}</div><div class="step-text">${step}</div>`;
+                list.appendChild(div);
+            });
+
+            document.getElementById("recipeCard").style.display = "block";
+            document.getElementById("recipeCard").scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    </script>
+</body>
+</html>

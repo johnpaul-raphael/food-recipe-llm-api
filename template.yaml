@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: Food Recipe LLM API - Fine-tuned GPT-2 recipe generator
+
+Globals:
+  Function:
+    Timeout: 300
+    MemorySize: 3008
+    Environment:
+      Variables:
+        MODEL_PATH: /tmp/recipe-gpt2-final
+        MODEL_BUCKET: food-recipe-llm-model
+        MAX_NEW_TOKENS: 1000
+        TEMPERATURE: "0.7"
+
+Resources:
+
+  FoodRecipeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: food-recipe-llm-api
+      PackageType: Image
+      Architectures:
+        - x86_64
+      Policies:
+        - S3ReadPolicy:
+            BucketName: food-recipe-llm-model
+      Events:
+        RootApi:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: GET
+        GenerateApi:
+          Type: HttpApi
+          Properties:
+            Path: /api/generate
+            Method: POST
+        HealthApi:
+          Type: HttpApi
+          Properties:
+            Path: /api/health
+            Method: GET
+        StaticFiles:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+    Metadata:
+      DockerTag: latest
+      DockerContext: .
+      Dockerfile: Dockerfile
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/
