@@ -11,7 +11,7 @@ Globals:
       Variables:
         MODEL_PATH: /tmp/recipe-gpt2-final
         MODEL_BUCKET: food-recipe-llm-model
-        MAX_NEW_TOKENS: 1000
+        MAX_NEW_TOKENS: 200
         TEMPERATURE: "0.7"
 
 Resources:
