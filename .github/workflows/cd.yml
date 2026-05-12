@@ -39,6 +39,7 @@ jobs:
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
             --resolve-image-repos \
+            --resolve-s3 \
             --stack-name food-recipe-llm-api \
             --region ap-south-1 \
             --capabilities CAPABILITY_IAM
