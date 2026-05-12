@@ -3,7 +3,7 @@ name: CI - Run Tests on PR
 on:
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   test:
